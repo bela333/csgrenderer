@@ -1,4 +1,4 @@
-use glam::{Affine3A, Mat3, Vec3, vec3};
+use glam::{Affine3A, Vec3, vec3};
 use image::RgbImage;
 
 use crate::{
@@ -27,7 +27,7 @@ fn main() {
     );
 
     let camera = Affine3A::look_at_lh(
-        Mat3::from_rotation_y(0.0f32.to_radians()) * vec3(0.0, 0.0, -1.5),
+        vec3(0.0, 0.0, -1.2),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
     )
@@ -46,7 +46,7 @@ fn main() {
             let direction = camera.transform_vector3(Vec3::new(x, y, 1.0)).normalize();
             let i = o.trace(camera_origin, direction);
             let mut i = CSGIntersect::new(i, vec![0.0, f32::INFINITY].into_iter());
-            *p = i.next().map(|d| camera.transform_point3(direction * d))
+            *p = i.next().map(|d| direction * d + camera_origin)
         }
     }
     let mut img = RgbImage::new(WIDTH, HEIGHT);
