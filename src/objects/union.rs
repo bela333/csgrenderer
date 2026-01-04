@@ -1,6 +1,7 @@
-use crate::{csg_union::CSGUnion, objects::Object};
+use crate::{objects::Object, range_union::RangeUnion};
 
-pub struct Union<O1, O2>
+#[derive(Clone)]
+pub struct CSGUnion<O1, O2>
 where
     O1: Object,
     O2: Object,
@@ -9,7 +10,7 @@ where
     obj2: O2,
 }
 
-impl<O1, O2> Union<O1, O2>
+impl<O1, O2> CSGUnion<O1, O2>
 where
     O1: Object,
     O2: Object,
@@ -19,16 +20,16 @@ where
     }
 }
 
-impl<O1, O2> Object for Union<O1, O2>
+impl<O1, O2> Object for CSGUnion<O1, O2>
 where
     O1: Object,
     O2: Object,
 {
-    type Iter = CSGUnion<O1::Iter, O2::Iter>;
+    type Iter = RangeUnion<O1::Iter, O2::Iter>;
 
     fn trace(&self, origin: glam::Vec3, direction: glam::Vec3) -> Self::Iter {
         let i1 = self.obj1.trace(origin, direction);
         let i2 = self.obj2.trace(origin, direction);
-        CSGUnion::new(i1, i2)
+        Self::Iter::new(i1, i2)
     }
 }

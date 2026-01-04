@@ -2,12 +2,13 @@ use glam::Affine3A;
 
 use crate::objects::Object;
 
-pub struct Transform<O: Object> {
+#[derive(Clone)]
+pub struct CSGTransform<O: Object> {
     obj: O,
     transformation: Affine3A,
 }
 
-impl<O: Object> Transform<O> {
+impl<O: Object> CSGTransform<O> {
     pub fn new(obj: O, transformation: Affine3A) -> Self {
         Self {
             obj,
@@ -16,7 +17,7 @@ impl<O: Object> Transform<O> {
     }
 }
 
-impl<O: Object> Object for Transform<O> {
+impl<O: Object> Object for CSGTransform<O> {
     type Iter = O::Iter;
 
     fn trace(&self, origin: glam::Vec3, direction: glam::Vec3) -> Self::Iter {

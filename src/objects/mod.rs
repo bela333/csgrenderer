@@ -1,9 +1,12 @@
 use glam::Vec3;
 
+pub mod cylinder;
+pub mod difference;
 pub mod intersect;
 pub mod sphere;
 pub mod transform;
 pub mod union;
+pub mod vec_union;
 
 pub trait Object
 where

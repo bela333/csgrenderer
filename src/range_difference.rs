@@ -5,7 +5,7 @@ struct UnionStateMachine<I: Iterator> {
     pub inside: bool,
 }
 
-pub struct CSGUnion<I1, I2>
+pub struct RangeDifference<I1, I2>
 where
     I1: Iterator<Item = f32>,
     I2: Iterator<Item = f32>,
@@ -14,7 +14,7 @@ where
     obj2: UnionStateMachine<I2>,
 }
 
-impl<I1, I2> CSGUnion<I1, I2>
+impl<I1, I2> RangeDifference<I1, I2>
 where
     I1: Iterator<Item = f32>,
     I2: Iterator<Item = f32>,
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<I1, I2> Iterator for CSGUnion<I1, I2>
+impl<I1, I2> Iterator for RangeDifference<I1, I2>
 where
     I1: Iterator<Item = f32>,
     I2: Iterator<Item = f32>,
@@ -43,21 +43,31 @@ where
     fn next(&mut self) -> Option<f32> {
         match (self.obj1.iterator.peek(), self.obj2.iterator.peek()) {
             (None, None) => None,
-            (None, Some(_)) => self.obj2.iterator.next(),
+            (None, Some(_)) => None,
             (Some(_), None) => self.obj1.iterator.next(),
             (Some(a), Some(b)) => {
                 if a < b {
+                    let applies_before = self.obj1.inside && !self.obj2.inside;
                     let this = &mut self.obj1;
-                    let other = &mut self.obj2;
                     let v = this.iterator.next();
                     this.inside = !this.inside;
-                    if !other.inside { v } else { self.next() }
+                    let applies_after = self.obj1.inside && !self.obj2.inside;
+                    if applies_before != applies_after {
+                        v
+                    } else {
+                        self.next()
+                    }
                 } else {
+                    let applies_before = self.obj1.inside && !self.obj2.inside;
                     let this = &mut self.obj2;
-                    let other = &mut self.obj1;
                     let v = this.iterator.next();
                     this.inside = !this.inside;
-                    if !other.inside { v } else { self.next() }
+                    let applies_after = self.obj1.inside && !self.obj2.inside;
+                    if applies_before != applies_after {
+                        v
+                    } else {
+                        self.next()
+                    }
                 }
             }
         }
@@ -66,13 +76,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::csg_union::CSGUnion;
+    use crate::range_difference::RangeDifference;
 
     #[test]
     fn union_null() {
         let obj1 = vec![];
         let obj2 = vec![];
-        let union: Vec<f32> = CSGUnion::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![]);
     }
 
@@ -80,36 +90,43 @@ mod tests {
     fn union_single() {
         let obj1 = vec![0.0, 1.0];
         let obj2 = vec![];
-        let union: Vec<f32> = CSGUnion::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![0.0, 1.0]);
 
         let obj1 = vec![];
         let obj2 = vec![0.0, 1.0];
-        let union: Vec<f32> = CSGUnion::new(obj1.into_iter(), obj2.into_iter()).collect();
-        assert_eq!(union, vec![0.0, 1.0]);
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
+        assert_eq!(union, vec![]);
     }
 
     #[test]
     fn union_intersect_once() {
         let obj1 = vec![0.0, 1.0];
         let obj2 = vec![0.5, 2.0];
-        let union: Vec<f32> = CSGUnion::new(obj1.into_iter(), obj2.into_iter()).collect();
-        assert_eq!(union, vec![0.0, 2.0]);
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
+        assert_eq!(union, vec![0.0, 0.5]);
     }
 
     #[test]
     fn union_contain() {
         let obj1 = vec![0.0, 1.0];
         let obj2 = vec![0.5, 0.7];
-        let union: Vec<f32> = CSGUnion::new(obj1.into_iter(), obj2.into_iter()).collect();
-        assert_eq!(union, vec![0.0, 1.0]);
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
+        assert_eq!(union, vec![0.0, 0.5, 0.7, 1.0]);
     }
 
     #[test]
     fn union_multiple() {
         let obj1 = vec![0.0, 1.0, 2.0, 3.0];
         let obj2 = vec![0.5, 2.5];
-        let union: Vec<f32> = CSGUnion::new(obj1.into_iter(), obj2.into_iter()).collect();
-        assert_eq!(union, vec![0.0, 3.0]);
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
+        assert_eq!(union, vec![0.0, 0.5, 2.5, 3.0]);
+    }
+    #[test]
+    fn union_touching() {
+        let obj1 = vec![0.0, 1.0];
+        let obj2 = vec![1.0, 2.0];
+        let union: Vec<f32> = RangeDifference::new(obj1.into_iter(), obj2.into_iter()).collect();
+        assert_eq!(union, vec![0.0, 1.0]);
     }
 }

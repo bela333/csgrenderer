@@ -5,7 +5,7 @@ struct UnionStateMachine<I: Iterator> {
     pub inside: bool,
 }
 
-pub struct CSGIntersect<I1, I2>
+pub struct RangeIntersect<I1, I2>
 where
     I1: Iterator<Item = f32>,
     I2: Iterator<Item = f32>,
@@ -14,7 +14,7 @@ where
     obj2: UnionStateMachine<I2>,
 }
 
-impl<I1, I2> CSGIntersect<I1, I2>
+impl<I1, I2> RangeIntersect<I1, I2>
 where
     I1: Iterator<Item = f32>,
     I2: Iterator<Item = f32>,
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<I1, I2> Iterator for CSGIntersect<I1, I2>
+impl<I1, I2> Iterator for RangeIntersect<I1, I2>
 where
     I1: Iterator<Item = f32>,
     I2: Iterator<Item = f32>,
@@ -66,13 +66,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::csg_intersect::CSGIntersect;
+    use crate::range_intersect::RangeIntersect;
 
     #[test]
     fn union_null() {
         let obj1 = vec![];
         let obj2 = vec![];
-        let union: Vec<f32> = CSGIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![]);
     }
 
@@ -80,12 +80,12 @@ mod tests {
     fn union_single() {
         let obj1 = vec![0.0, 1.0];
         let obj2 = vec![];
-        let union: Vec<f32> = CSGIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![]);
 
         let obj1 = vec![];
         let obj2 = vec![0.0, 1.0];
-        let union: Vec<f32> = CSGIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![]);
     }
 
@@ -93,7 +93,7 @@ mod tests {
     fn union_intersect_once() {
         let obj1 = vec![0.0, 1.0];
         let obj2 = vec![0.5, 2.0];
-        let union: Vec<f32> = CSGIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![0.5, 1.0]);
     }
 
@@ -101,7 +101,7 @@ mod tests {
     fn union_contain() {
         let obj1 = vec![0.0, 1.0];
         let obj2 = vec![0.5, 0.7];
-        let union: Vec<f32> = CSGIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![0.5, 0.7]);
     }
 
@@ -109,7 +109,7 @@ mod tests {
     fn union_multiple() {
         let obj1 = vec![0.0, 1.0, 2.0, 3.0];
         let obj2 = vec![0.5, 2.5];
-        let union: Vec<f32> = CSGIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
+        let union: Vec<f32> = RangeIntersect::new(obj1.into_iter(), obj2.into_iter()).collect();
         assert_eq!(union, vec![0.5, 1.0, 2.0, 2.5]);
     }
 }

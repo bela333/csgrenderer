@@ -1,33 +1,56 @@
+use std::f32;
+
 use glam::{Affine3A, Vec3, vec3};
 use image::RgbImage;
 
 use crate::{
-    csg_intersect::CSGIntersect,
-    objects::{Object, intersect::Intersect, sphere::Sphere, transform::Transform},
+    objects::{
+        Object, cylinder::CSGCylinder, difference::CSGDifference, sphere::CSGSphere,
+        transform::CSGTransform, vec_union::CSGVecUnion,
+    },
+    range_intersect::RangeIntersect,
 };
 
-pub mod csg_intersect;
-pub mod csg_union;
 pub mod objects;
+pub mod range_difference;
+pub mod range_intersect;
+pub mod range_union;
+pub mod range_vec_union;
 
-const WIDTH: u32 = 512;
-const HEIGHT: u32 = 512;
+const WIDTH: u32 = 1920;
+const HEIGHT: u32 = 1080;
 
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
 
 fn main() {
-    let s1 = Sphere::new(glam::Vec3::new(0.0, 0.0, 0.0), 1.0);
-    let s2 = Sphere::new(glam::Vec3::new(0.0, 1.0, 0.0), 1.0);
-    let o = Intersect::new(s1, s2);
-    let o = Transform::new(
-        o,
-        Affine3A::from_rotation_x(15.0f32.to_radians())
-            * Affine3A::from_rotation_z(-15.0f32.to_radians())
-            * Affine3A::from_translation(vec3(0.0, -0.5, 0.0)),
-    );
+    let o = {
+        let sphere = CSGSphere::new(Vec3::ZERO, 1.0);
+        let planar_holes: CSGVecUnion<_> = CSGVecUnion::new(
+            (0..5)
+                .map(|i| {
+                    let transform = Affine3A::from_rotation_x(-f32::consts::PI / 4.0 * (i as f32));
+                    let cylinder = CSGCylinder::new(0.2, 1.0);
+                    CSGTransform::new(cylinder, transform)
+                })
+                .collect(),
+        );
+
+        let holes = CSGVecUnion::new(
+            (0..8)
+                .map(|i| {
+                    let planar_holes = planar_holes.clone();
+                    let transform =
+                        Affine3A::from_rotation_y(f32::consts::PI * 2.0 / 8.0 * (i as f32));
+
+                    CSGTransform::new(planar_holes, transform)
+                })
+                .collect(),
+        );
+        CSGDifference::new(sphere, holes)
+    };
 
     let camera = Affine3A::look_at_lh(
-        vec3(0.0, 0.0, -1.2),
+        vec3(3.0, 2.0, 0.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
     )
@@ -43,9 +66,9 @@ fn main() {
             let y = y as f32 / HEIGHT as f32;
             let x = (x - 0.5) * 2.0 * ASPECT_RATIO;
             let y = ((1.0 - y) - 0.5) * 2.0;
-            let direction = camera.transform_vector3(Vec3::new(x, y, 1.0)).normalize();
+            let direction = camera.transform_vector3(Vec3::new(x, y, 2.0)).normalize();
             let i = o.trace(camera_origin, direction);
-            let mut i = CSGIntersect::new(i, vec![0.0, f32::INFINITY].into_iter());
+            let mut i = RangeIntersect::new(i, vec![0.0, f32::INFINITY].into_iter());
             *p = i.next().map(|d| direction * d + camera_origin)
         }
     }
@@ -72,7 +95,7 @@ fn main() {
             (v - vx).cross(v - vy).normalize()
         };
         let diffuse = (light - v).normalize().dot(normal).clamp(0.0, 1.0);
-        let color = Vec3::ONE * (diffuse + 0.001).powf(1.0 / 2.2);
+        let color = Vec3::ONE * (diffuse + 0.01).powf(1.0 / 2.2);
         *p = image::Rgb([
             (color.x.clamp(0.0, 1.0) * 255.0) as u8,
             (color.y.clamp(0.0, 1.0) * 255.0) as u8,

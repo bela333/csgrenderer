@@ -2,12 +2,13 @@ use glam::Vec3;
 
 use crate::objects::Object;
 
-pub struct Sphere {
+#[derive(Clone)]
+pub struct CSGSphere {
     origin: Vec3,
     radius_squared: f32,
 }
 
-impl Sphere {
+impl CSGSphere {
     pub fn new(origin: Vec3, radius: f32) -> Self {
         Self {
             origin,
@@ -16,7 +17,7 @@ impl Sphere {
     }
 }
 
-impl Object for Sphere {
+impl Object for CSGSphere {
     type Iter = std::vec::IntoIter<f32>;
 
     fn trace(&self, origin: Vec3, direction: Vec3) -> Self::Iter {
