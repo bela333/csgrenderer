@@ -1,5 +1,6 @@
 use glam::Vec3;
 
+pub mod clipplane;
 pub mod cylinder;
 pub mod difference;
 pub mod intersect;
