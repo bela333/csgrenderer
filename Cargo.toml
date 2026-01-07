@@ -5,4 +5,8 @@ edition = "2024"
 
 [dependencies]
 glam = "0.30.9"
-image = "0.25.9"
+image = { version = "0.25.9", default-features = false, features = [
+  "png",
+  "rayon",
+] }
+rayon = "1.11.0"
